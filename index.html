@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <style>
+        header {
+            text-align: center;
+        }
+
+        .grid-container {
+            display: grid;
+            gap: 0;
+            grid-template-rows: auto auto auto;
+            grid-template-columns: auto auto auto;
+            justify-content: center;
+            align-content: center;
+        }
+
+        .grid-item {
+            background: #F8F8F8;
+            border: 1px black solid;
+            padding: 30px;
+        }
+
+        .grid-item:hover {
+            background: #c3c3c3;
+        }
+    </style>
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('app', () => ({
+                // empty: 0, user: 1, computer: -1
+                board: [
+                    [0, 0, 0],
+                    [0, 0, 0],
+                    [0, 0, 0]
+                ],
+                turn: 1,
+                // draw: 0, user: 1, computer: -1, continue: null
+                win: null,
+
+                init() {
+                    if (this.turn === -1) {
+                        this.play_ai();
+                    }
+                },
+
+                is_over() {
+                    for (var i = 0; i < 3; i++) {
+                        for (var j = 0; j < 3; j++) {
+                            if (this.board[i][j] === 0) {
+                                return false;
+                            }
+                        }
+                    }
+
+                    return true;
+                },
+
+                is_win(id) {
+                    for (var i = 0; i < 3; i++) {
+                        sum = this.board[i][0] + this.board[i][1] + this.board[i][2];
+                        if (sum === id * 3) {
+                            return true;
+                        }
+                    }
+
+                    for (var i = 0; i < 3; i++) {
+                        sum = this.board[0][i] + this.board[1][i] + this.board[2][i];
+                        if (sum === id * 3) {
+                            return true;
+                        }
+                    }
+
+                    sum1 = this.board[0][0] + this.board[1][1] + this.board[2][2];
+                    sum2 = this.board[0][2] + this.board[1][1] + this.board[2][0];
+                    if (sum1 === id * 3 || sum2 === id * 3) {
+                        return true;
+                    }
+
+                    return false;
+                },
+
+                play_ai() {
+                    for (var i = 0; i < 3; i++) {
+                        for (var j = 0; j < 3; j++) {
+                            if (this.board[i][j] === 0) {
+                                this.play(i, j);
+                                return;
+                            }
+                        }
+                    }
+                },
+
+                play(i, j) {
+                    if (this.board[i][j] !== 0 || this.win !== null) {
+                        return;
+                    }
+                    this.board[i][j] = this.turn;
+                    if (this.is_win(this.turn)) {
+                        this.win = this.turn;
+                    } else if (this.is_over()) {
+                        this.win = 0;
+                    } else {
+                        this.turn *= -1;
+                        if (this.turn === -1) {
+                            this.play_ai();
+                        }
+                    }
+                }
+            }))
+        });
+    </script>
+</head>
+
+<body>
+    <div x-data="app">
+        <header>
+            <p x-text="`turn: ${turn}`"></p>
+            <p x-text="`win: ${win}`"></p>
+        </header>
+        <div class="grid-container">
+            <template x-for="i in [2, 1, 0]">
+                <template x-for="j in [0, 1, 2]">
+                    <div class="grid-item" x-on:click="play(i, j)" x-text="board[i][j]"></div>
+                </template>
+            </template>
+        </div>
+    </div>
+</body>
+
+</html>
