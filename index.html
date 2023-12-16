@@ -2,29 +2,56 @@
 <html lang="en">
 
 <head>
+    <title>Tic Tac Toe</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <style>
+        html {
+            height: 100%;
+        }
+
+        body {
+            font-family: Verdana, Arial, sans-serif;
+            height: 100%;
+            background: black;
+        }
+
+        .container {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
         header {
+            color: white;
             text-align: center;
+            font-weight: bolder;
+            font-size: 2rem;
         }
 
         .grid-container {
             display: grid;
             gap: 0;
-            grid-template-rows: auto auto auto;
-            grid-template-columns: auto auto auto;
+            grid-template-rows: 7em 7em 7em;
+            grid-template-columns: 7em 7em 7em;
             justify-content: center;
             align-content: center;
         }
 
         .grid-item {
+            text-align: center;
             background: #F8F8F8;
-            border: 1px black solid;
-            padding: 30px;
+            border: 1px black solid;  
+            font-weight: bolder;
+            font-size: 4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .grid-item:hover {
@@ -47,7 +74,10 @@
 
                 init() {
                     if (this.turn === -1) {
-                        this.play_ai();
+                        // if first turn is AI, do a random move
+                        var r = Math.floor(Math.random() * (2 - 0 + 1) + 0);
+                        var c = Math.floor(Math.random() * (2 - 0 + 1) + 0);
+                        this.play(r, c);
                     }
                 },
 
@@ -65,21 +95,21 @@
 
                 is_win(id) {
                     for (var i = 0; i < 3; i++) {
-                        sum = this.board[i][0] + this.board[i][1] + this.board[i][2];
+                        var sum = this.board[i][0] + this.board[i][1] + this.board[i][2];
                         if (sum === id * 3) {
                             return true;
                         }
                     }
 
                     for (var i = 0; i < 3; i++) {
-                        sum = this.board[0][i] + this.board[1][i] + this.board[2][i];
+                        var sum = this.board[0][i] + this.board[1][i] + this.board[2][i];
                         if (sum === id * 3) {
                             return true;
                         }
                     }
 
-                    sum1 = this.board[0][0] + this.board[1][1] + this.board[2][2];
-                    sum2 = this.board[0][2] + this.board[1][1] + this.board[2][0];
+                    var sum1 = this.board[0][0] + this.board[1][1] + this.board[2][2];
+                    var sum2 = this.board[0][2] + this.board[1][1] + this.board[2][0];
                     if (sum1 === id * 3 || sum2 === id * 3) {
                         return true;
                     }
@@ -87,15 +117,54 @@
                     return false;
                 },
 
-                play_ai() {
+                minmax(player, index = 0) {
+                    var m_win = this.is_win(player)
+                    var m_over = this.is_over()
+                    if (m_over) {
+                        if (this.is_win(-1)) {
+                            return [null, null, 1];
+                        } else if (this.is_win(1)) {
+                            return [null, null, -1];
+                        } else {
+                            return [null, null, 0];
+                        }
+                    }
+
+                    if (player === -1) {
+                        var best = [null, null, -99999];
+                    }
+                    else {
+                        var best = [null, null, 99999];
+                    }
+
                     for (var i = 0; i < 3; i++) {
                         for (var j = 0; j < 3; j++) {
                             if (this.board[i][j] === 0) {
-                                this.play(i, j);
-                                return;
+                                this.board[i][j] = player;
+                                var score = this.minmax(-1 * player, index + 1);
+                                this.board[i][j] = 0;
+                                score[0] = i;
+                                score[1] = j;
+
+                                if (player === -1) {
+                                    if (score[2] > best[2]) {
+                                        best = [...score];
+                                    }
+                                } else {
+                                    if (score[2] < best[2]) {
+                                        best = [...score];
+                                    }
+                                }
                             }
                         }
                     }
+
+                    return best;
+                },
+
+                play_ai() {
+                    var next_move = this.minmax(-1);
+                    this.play(next_move[0], next_move[1]);
                 },
 
                 play(i, j) {
@@ -113,6 +182,20 @@
                             this.play_ai();
                         }
                     }
+                },
+
+                //
+                get_symbol(id) {
+                    if (id === 1) return 'X'
+                    else if (id === -1) return 'O'
+                    else return ''
+                },
+
+                get_win_text() {
+                    if (this.win === 1) return 'User'
+                    else if (this.win === -1) return 'Computer'
+                    else if (this.win === 0) return 'Tie'
+                    else return '-'
                 }
             }))
         });
@@ -120,15 +203,16 @@
 </head>
 
 <body>
-    <div x-data="app">
+    <div x-data="app" class="container">
         <header>
-            <p x-text="`turn: ${turn}`"></p>
-            <p x-text="`win: ${win}`"></p>
+            <p>Winner: <span x-text="get_win_text()"></span></p>
         </header>
         <div class="grid-container">
             <template x-for="i in [2, 1, 0]">
                 <template x-for="j in [0, 1, 2]">
-                    <div class="grid-item" x-on:click="play(i, j)" x-text="board[i][j]"></div>
+                    <div class="grid-item" x-on:click="play(i, j)">
+                        <span x-text="get_symbol(board[i][j])"></span>
+                    </div>
                 </template>
             </template>
         </div>
